@@ -1,0 +1,8 @@
+This paper presents work on navigation of a UAV by using Extended Kalman Filter based GPS / INS integration. A
+mathematical model has been developed and simulated for the same. A cruise trajectory at a fixed angle of attack is taken as the
+flight path of the UAV along with the assumption of ideal control. The UAV navigation is done using the Inertial Navigation System
+(INS) but the errors due to the INS measurements grow with time, which need to be checked. Thus GPS is used as another aid of
+measurement and is integrated with INS using Extended Kalman Filter to correct the INS state estimates. Also, the errors in
+accelerometer and gyroscope are estimated and are used to correct the accelerometer and gyroscope measurements to achieve a
+higher accuracy in navigation.
+

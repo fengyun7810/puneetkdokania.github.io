@@ -1,0 +1,11 @@
+@INPROCEEDINGS{4809187, 
+author={Verma, O.P. and Hanmandll, M. and Kumar, P. and Srivastava, S.}, 
+booktitle={Advance Computing Conference, 2009. IACC 2009. IEEE International}, title={A Novel Approach for Edge Detection using AntColony Otimization and Fuzz Derivative Technique}, 
+year={2009}, 
+month={march}, 
+volume={}, 
+number={}, 
+pages={1206 -1212}, 
+keywords={Ant colony optimization;Data mining;Educational institutions;Fuzzy neural networks;Fuzzy systems;Gaussian noise;Image edge detection;Insects;Probability;Working environment noise;edge detection;fuzzy set theory;optimisation;probability;ant colony optimization;distributed system;fuzzy derivative technique;fuzzy probability factor;image edge detection;pheromone matrix;probabilistic transition matrix;Ant colony system;Fuzzy Denivative;Fuzzy probability factor (FPF);Noise;Stigmergy;decay coefficient;heuristic function;pheromone;probabilistic transition matrix and metaheuristic;}, 
+doi={10.1109/IADCC.2009.4809187}, 
+ISSN={},}

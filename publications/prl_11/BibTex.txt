@@ -1,0 +1,18 @@
+@article{Verma20111187,
+title = "A novel bacterial foraging technique for edge detection",
+journal = "Pattern Recognition Letters",
+volume = "32",
+number = "8",
+pages = "1187 - 1196",
+year = "2011",
+note = "",
+issn = "0167-8655",
+doi = "10.1016/j.patrec.2011.03.008",
+url = "http://www.sciencedirect.com/science/article/pii/S0167865511000730",
+author = "Om Prakash Verma and Madasu Hanmandlu and Puneet Kumar and Sidharth Chhabra and Akhil Jindal",
+keywords = "Ant Colony System",
+keywords = "Bacterial foraging",
+keywords = "Derivative",
+keywords = "Direction probability matrix",
+keywords = "Edge detection"
+}

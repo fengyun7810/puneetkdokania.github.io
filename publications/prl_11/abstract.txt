@@ -1,0 +1,11 @@
+A new approach for edge detection using a combination of bacterial foraging algorithm (BFA) and prob-
+abilistic derivative technique derived from Ant Colony Systems, is presented in this paper. The foraging
+behavior of some species of bacteria like Escherichia coli can be hypothetically modeled as an optimiza-
+tion process. A group of bacteria search for nutrients in a way that maximizes the energy obtained per
+unit time spent during the foraging. The proposed approach aims at driving the bacteria through the edge
+pixels. The direction of movement of the bacteria is found using a direction probability matrix, computed
+using derivatives along the possible directions. Rules defining the derivatives are devised to ensure that
+the variation of intensity due to noise is discarded. Quantitative analysis of the feasibility of the proposed
+approach and its comparison with other standard edge detection operators in terms of kappa and entropy
+are given. The effect of initial values of parameters of BFA on the edge detection is discussed.
+

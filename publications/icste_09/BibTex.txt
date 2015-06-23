@@ -1,0 +1,10 @@
+@inbook{doi:10.1142/9789814289986_0034,
+author = {SHIVANGI SRIVASTAVA and NEHA KUMARI and PUNEET KUMAR},
+title = {PROBABILISTIC APPROACH FOR AUTONOMOUS NAVIGATION USING STEREO VISION},
+booktitle = {Software Technology and Engineering},
+chapter = {34},
+pages = {184-188},
+doi = {10.1142/9789814289986_0034},
+URL = {http://www.worldscientific.com/doi/abs/10.1142/9789814289986_0034},
+eprint = {http://www.worldscientific.com/doi/pdf/10.1142/9789814289986_0034}
+}

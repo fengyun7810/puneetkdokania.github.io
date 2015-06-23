@@ -1,0 +1,13 @@
+Predicting driver’s behaviors is a key component for future Advanced Driver
+Assistance Systems (ADAS). In this thesis, a novel approach based on Support
+Vector Machine (SVM) and Bayesian filter (BF) is proposed for online lane change
+intention prediction. The approach uses the multiclass probabilistic outputs of the
+Support Vector Machine as an input to the Bayesian filter, and the posterior output
+of the Bayesian filter is used for the final prediction of lane changes. A particle
+filter based lane tracker integrated with a Lexus experimental platform is used for
+real-world data acquisition for the purpose of training and testing. Data from dif-
+ferent drivers on different highways were used for the robustness evaluation of the
+overall approach. In-depth analysis of the proposed approach is also done and pre-
+sented. The proposed approach is able to predict driver’s intention to change lane
+1.3 seconds (average) earlier with maximum prediction horizon of 3.29 seconds.
+

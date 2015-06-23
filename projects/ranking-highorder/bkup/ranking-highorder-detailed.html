@@ -1,0 +1,539 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>
+Learning to Ranking
+</title>
+
+<link rel="stylesheet" type="text/css" href="./dependencies/css/cvccss.css" media="all">
+
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+    tex2jax: {inlineMath: [["$","$"],["\\(","\\)"]]}
+  });
+</script>
+<script type="text/javascript" src="./dependencies/mathjax/MathJax-2.3-latest/MathJax.js"></script>
+
+
+<style type="text/css">
+.slidingDiv {
+    display:none;
+    background-color: #BDBDBD;
+    padding:5px;
+    margin-top:1px;
+    border-bottom:5px solid #1C1C1C;
+    border-top:5px solid #1C1C1C; 
+    zoom: 1;
+}
+</style>
+
+</head>
+<body>
+
+<div id="cvc_header">
+<table style="width:100%;">
+<tr>
+<td>
+<div style="font-size:30px; font-weight: bold; letter-spacing: 0.2em;">
+<a href="http://cvn.ecp.fr/">Center for Visual Computing</a>
+</div>
+<div style="font-size:15px; font-weight:bold; color:white;">
+<a href="http://www.ecp.fr/">Department of Applied Mathematics, Ecole Centrale de Paris</a>
+<a href="http://cvn.ecp.fr/personnel/nikos/">Galen Team, INRIA</a>
+</div>
+</td>
+<!---
+<td style="width: 50%">
+<img style="float:right;width:300px;" src="./images/cvc_logo.png"/>
+</td>
+--->
+</tr>
+</table>
+</div> 
+
+<h2>Learning to Rank using High-Order Information</h2>
+<h2>
+    <a style="font-size:15px; " href="http://cvn.ecp.fr/personnel/puneet/">Puneet Kumar Dokania</a> <a style="font-size:15px;">,</a>
+    <a style="font-size:15px; " href="http://researchweb.iiit.ac.in/~aseem.behl/">A. Behl</a> <a style="font-size:15px;">,</a>
+    <a style="font-size:15px; " href="http://faculty.iiit.ac.in/~jawahar/">C. V. Jawahar</a> <a style="font-size:15px;">,</a>
+    <a style="font-size:15px; " href="http://cvn.ecp.fr/personnel/pawan/">M. Pawan Kumar</a>    
+<BR>
+<BR>
+</h2>
+
+<div id="main" style="width: 80%;">
+
+
+<h3>Overview</h3>
+<p>
+The objective of this work is to improve ranking (or improve Average Precision) by using High-Order Information. The motivation behind improving ranking and using High-Order information is the following:
+<ol style="margin-left:0px;">
+<li type="disc"><p>Ranking is an important task in real world problems. For example, in the field of computer vision, consider the problem of action classification (or more precisely action ranking). The input is a set of samples corresponding to bounding boxes of persons, and an action such as 'jumping'. The desired output is a ranking where a sample representing a jumping person is ranked higher than a sample representing a person performing a different action. </p>
+
+<li type="disc"><p>Plenty of High-Order Information is available, for example, in case of action classification one can use the fact that persons in the same image are more likely to perform the same action. In object detection, two objects of the same category tend to have the similar aspect ratio. In pose estimation, people in the same scene tend to have similar poses (sitting down to watch movie). In document retrieval, documents containing same or similar words are more likely to belong to the same class.</p>
+
+<li type="disc"><p>Therefore, we should be able to use this information in order to improve the ranking.</p>
+</ol>
+
+In order to achieve the goal of improving ranking while using High-Order information we propose two learning frameworks - <b>HOB-SVM</b> and <b>HOAP-SVM</b>. 
+<ol style="margin-left:0px;">
+<li><p>High-Order binary SVM (HOB-SVM) learns to rank by optimizing surrogate 0/1 loss while using high-order information. </p></li>
+<li><p>High-Order Average Precision SVM (HOAP-SVM) learns to rank by optimizing the average precision based loss function while encoding high-order information. Note that Average Precision (AP) is the measure of the quality of ranking so it's desirable to optimize AP while using the high-order information. </p></li>
+</ol>
+
+</p>
+
+<h3>High-Order Binary SVM (HOB-SVM)</h3>
+<h4>Preliminary</h4>
+<p>
+The first framework, which we call high-order binary SVM (HOB-SVM), takes its inspiration from the standard SVM. The input of a HOB-SVM is a set of $n$ samples ${\bf X} = \{{\bf x}_i,i=1,\cdots,n\}$. The output of HOB-SVM is an assignment of a class for each sample, ${\bf Y} = \{y_i,i=1,\cdots,n\}$ where $y_i \in \{0,1\}$. The label `0' implies that the sample has been assigned to the negative class, whereas the label `1' implies that the sample has been assigned to the positive class. The joint feature vector $\Psi({\bf X},{\bf Y})$ of the input ${\bf X}$ and the output ${\bf Y}$ consists of two parts. The first part $\Psi_1({\bf X},{\bf Y})$ captures first-order information, and the second part $\Psi_2({\bf X},{\bf Y})$ captures the high-order information
+
+\begin{equation}
+\Psi({\bf X},{\bf Y}) = \left(
+\begin{array}[1]{c}
+\Psi_1({\bf X},{\bf Y}) \\
+\Psi_2({\bf X},{\bf Y})
+\end{array}
+\right).
+\end{equation}
+
+Although we would ideally like to optimize a loss function based on the AP [3], this results in a difficult loss-augmented inference problem when the joint feature vector captures high-order information. Hence, inspired by the success of SVM for ranking, we use a surrogate loss function defined as follows:
+\begin{equation}
+\label{eq:loss01}
+\Delta({\bf Y}^*,{\bf Y}) = \frac{J\sum_{i,y^*_i=1}\delta(y_i=0)+\sum_{j,y^*_j=0}\delta(y_j=1)}{J|{\cal P}|+|{\cal N}|},
+\end{equation}
+where $\delta(\cdot)$ is 1 if its argument is true and 0 otherwise. The terms $|{\cal P}|$ and $|{\cal N}|$
+are the total number of positive and negative samples (as specified by the ground-truth assignment ${\bf Y}^*$) respectively.
+The hyperparameter $J$ is set to $\mathcal{|N|}/\mathcal{|P|}$. In other words, $\Delta({\bf Y}^*,{\bf Y})$ is the weighted fraction of misclassifications.
+</p>
+
+<h4>Parameter Learning</h4>
+<p>
+The parameters of HOB-SVM are obtained by solving the following convex optimization problem.
+\begin{eqnarray}
+\min_{\bf w} && \frac{1}{2}{||{\bf w}||^2} + C \xi, \\
+&& {\bf w}^\top\Psi({\bf X},{\bf Y}) - {\bf w}^\top\Psi({\bf X},\overline{\bf Y}) \geq \Delta({\bf Y}^*,\overline{\bf Y}) - \xi, \forall \overline{\bf Y},
+{\bf w}_2 \leq 0. \nonumber
+\end{eqnarray}
+
+<h4>Optimization</h4>
+<p>
+The objective function of HOB-SVM is objective in the parameters, therefore, can be optimized to get the global minima. We used the cutting-plane algorithm to handle exponentially many constraints. Due to the supermodularity constraint ${\bf w}_2 \leq 0$, the loss augmented inference step is done using graph-cut. In the absence of the supermodularity constraint any approximate inference technique can be used.
+</p>
+
+<h4>Ranking using Max-marginals</h4>
+<p>
+From a theoretical point of view, the main disadvantage of HOB-SVM is that it optimizes a surrogate loss function instead of the AP based loss function. HOAP-SVM addresses this disadvantage. From a practical point of view, instead of assigning an individual score for each sample, it assigns one score ${\bf w}^\top\Psi({\bf X},{\bf Y})$ for all the samples taken together. This prevents us from specifying a ranking of the samples. <br><br>
+
+To address the above mentioned issue, we propose a simple yet intuitive solution: (i) compute the difference between the max-marginal of a sample being assigned to the positive class and the max-marginal of it being assigned to the negative class; and (ii) sort the samples according to the difference in max-marginals. Max-marginal captures high-order information and the difference of max-marginals measures our confidence on a particular sample belonging to the positive class. Formally, we define the max-marginal of a sample ${\bf x}_i$ belonging to the positive class $m_i^+({\bf w})$ and negative class $m_i^-({\bf w})$ as:
+
+
+\begin{eqnarray}
+m_i^+({\bf w}) = {\bf w}^\top\Psi({\bf X},{\bf Y}_i^+), {\bf Y}_i^+ = argmax_{{\bf Y},y_i = 1} {\bf w}^\top\Psi({\bf X},{\bf Y}).  \\
+\label{eq:negativeMaxMarginal}
+m_i^-({\bf w}) = {\bf w}^\top\Psi({\bf X},{\bf Y}_i^-), {\bf Y}_i^- = argmax_{{\bf Y},y_i = 0} {\bf w}^\top\Psi({\bf X},{\bf Y}).
+\end{eqnarray}
+
+The max-marginals for all the samples can be computed efficiently using the dynamic graph cuts algorithm [5]. Given the max-marginals $m_i^+({\bf w})$ and $m_i^-({\bf w})$, the score of a sample ${\bf x}_i$ is defined as
+\begin{equation}
+s_i({\bf w}) = m_i^+({\bf w})-m_i^-({\bf w}).
+\end{equation}
+
+Ranking is obtained by sorting the sample scores $s_i({\bf w})$.
+</p>
+
+<h3>High-Order Average Precision SVM (HOAP-SVM)</h3>
+<h4>Preliminary</h4>
+<p>
+While HOB-SVM allows us to incorporate high-order information via the pairwise joint feature vector, it suffers from the deficiency of using a surrogate loss function. In what follows, we extend AP-SVM [3] such that the score of the ranking is the weighted sum of the difference of max-marginals of individual samples. Therefore, unlike AP-SVM, HOAP-SVM can optimize AP based loss function while incorporating high-order information.<br><br>
+
+The input of HOAP-SVM is a set of $n$ samples ${\bf X} = \{{\bf x}_i,i=1,\cdots,n\}$. Similar to AP-SVM, a sample can belong to the positive class or the negative class. The output of HOAP-SVM is a ranking matrix ${\bf R}$, defined in a similar manner to AP-SVM. During training, the ground-truth ranking matrix ${\bf R}^*$ assigns each positive sample to a higher rank than all negative samples. The indices of positive and negative samples is represented as $\mathcal{P}$ and $\mathcal{N}$ respectively.
+
+The parameters of HOAP-SVM are denoted by ${\bf w}$. Given an input ${\bf X}$ and a ranking ${\bf R}$, the score for the ranking specified by HOAP-SVM is defined as follows:
+\begin{equation}
+\label{eq:m4score}
+S({\bf X},{\bf R};{\bf w}) = \gamma \sum_{i\in{\cal P}}\sum_{j\in{\cal N}} {\bf R}_{ij} (s_i({\bf w})-s_j({\bf w})),
+\gamma = \frac{1}{|{\cal P}||{\cal N}|}.
+\end{equation}
+In other words, the score of a ranking is the weighted sum of the difference of max-marginals for each sample, where the weights are specified by the ranking.
+
+The loss function is defined as $\Delta({\bf R}^*, {\bf R}) = 1 - AP({\bf R}^*, {\bf R})$, where $AP({\bf R}^*,{\bf R})$ denote the average precision of the ranking matrix ${\bf R}$ with respect to the ground truth ranking ${\bf R}^*$. Minimizing  $\Delta({\bf R}^*, {\bf R})$ is equivalent to maximizing average precision  $AP({\bf R}^*, {\bf R})$.
+</p>
+
+<h4> Parameter Learning </h4>
+<p>
+The parameters of HOAP-SVM are learned by optimizing the AP loss. To this end, we propose to estimate ${\bf w}$ by solving the following optimization problem:
+\begin{eqnarray}
+\min_{\bf w} && \frac{1}{2}{||{\bf w}||^2} + C\xi, \\
+&&S({\bf X},{\bf R}^*;{\bf w}) - S({\bf X},{\bf R};{\bf w}) \geq \Delta({\bf R}^*,{\bf R}) - \xi, \forall {\bf R},
+{\bf w}_2 \leq 0. \nonumber
+\end{eqnarray}
+
+Substituting the equation corresponding to the scores $S({\bf X},{\bf R}^*;{\bf w})$ and $S({\bf X},{\bf R};{\bf w})$ in the above optimization problem leads to the following non-convex (difference of convex) optimization problem:
+
+\begin{eqnarray}
+\label{eq:m4LearningDoC}
+\min_{\bf w} && \frac{1}{2}{||{\bf w}||^2} + C\xi, \\
+&&\xi \geq \Delta({\bf R}^*,{\bf R}) + f({\bf w};{\bf R}) - g({\bf w};{\bf R}), \forall {\bf R}. \nonumber
+\end{eqnarray}
+
+where, 
+
+\begin{eqnarray}
+f({\bf w};{\bf R}) = \gamma \sum_{i\in {\cal P}} m_i^-({\bf w}) \left(\sum_{j\in {\cal N}} ({\bf R}^*_{ij}-{\bf R}_{ij}) \right)  + \gamma  \sum_{j\in {\cal N}}  m_j^+({\bf w}) \left(\sum_{i\in {\cal P}} ({\bf R}^*_{ij}-{\bf R}_{ij}) \right),\nonumber \\
+g({\bf w};{\bf R}) = \gamma \sum_{i\in {\cal P}} m_i^+({\bf w}) \left(\sum_{j\in {\cal N}} ({\bf R}^*_{ij}-{\bf R}_{ij}) \right) +  \gamma \sum_{j\in {\cal N}} m_j^-({\bf w}) \left(\sum_{i\in {\cal P}} ({\bf R}^*_{ij}-{\bf R}_{ij}) \right)
+\end{eqnarray}
+
+Note that, $f({\bf w};{\bf R})$ and $g({\bf w};{\bf R})$ are convex in ${\bf w}$.
+</p>
+
+ <h4>Optimization</h4>
+ <p>
+HOAP-SVM has non-convex objective function (difference of convex), therefore, can be optimized to get the local minima using CCCP algorithm [4]. The max-marginals for each sample is calculated efficiently using dynamic graph-cut [5]. The loss augmented inference is done efficiently using the greedy algorithm of Yue. et. al [3]. The initialization of CCCP is done using HOB-SVM.
+</p>
+
+<h4> Ranking </h4>
+<p>
+Similar to HOB-SVM, the ranking is obtained by sorting the sample scores $s_i({\bf w})$.
+</p>
+
+
+
+<h3> Comparison with existing state-of-the-art methods </h3>
+
+<ol style="margin-left:0px;">
+<li type="disc"> SVM [1]: Optimizes 0/1 loss. Can not encode High-Order Information. Convex objective function. </li>
+<li type="disc"> AP-SVM [3]: Optimizes AP loss. Can not encode High-Order Information. Convex objective function. Note that AP-SVM is a special form of SSVM [2]. </li>
+<li type="disc"> <p> HOB-SVM (Proposed framework): Optimizes 0/1 loss. Can encode High-Order Information. HOB-SVM encodes High-Order information using joint feature map, inspired by SSVM [2], but unlike SSVM HOB-SVM ranks samples using scores based on the difference of max-marginals. Convex objective function. </p> </li>	 
+<li type="disc"> <p> HOAP-SVM (Proposed framework): Optimizes AP loss. Can encode High-Order Information. Uses difference of max-marginal scores to optimize AP. Non-convex objective function (difference of convex). CCCP [4] algorithm is used to get a local minima. </p></li>
+</ol>
+
+<h3> Results </h3>
+<p>
+We tested HOB-SVM and HOAP-SVM using a challenging problem of Action Classification. We provide a comparison of HOB-SVM and HOAP-SVM with SVM and AP-SVM. The details of all the experiments are provided in our ECCV 2014 paper.
+</p>			
+			
+<h4>Action Classification</h4>
+<p>
+Input is a set of bounding boxes and the corresponding images of persons performing a known action. We use the poselet-based activations of the bounding boxes and GIST of the entire image to capture the first-order information. Only poselet based activations are used to capture the high-order information. Note that the samples were connected based on the hypothesis that "persons in the same image are more likely to perform same action". In other words, samples coming from the same images were fully connected to each other. Note that one can use any other criterion depending on the approach to tackle the problem and the type of problems in the proposed frameworks.
+</p>
+
+<p>
+We use the PASCAL VOC 2011 action classification dataset, which consists of 4846 images depicting 10 action classes. The dataset is divided into two subsets: 2424 'trainval' images for which we are provided the bounding boxes of the persons in the image together with their action class; and 2422 'test' images for which we are only provided with the person bounding boxes. The putative values of each latent variable are restricted to boxes obtained by a standard person detector.
+</p>			
+		
+<p>
+Figures below show the difference of average AP for the five fold cross validation over the entire <b>trainval</b> dataset for all the 10 action classes. Note that <em>AP-SVM vs SVM</em> means average precision of AP-SVM minus the average precision of SVM. Similarly for others.
+</p>
+			
+	<p style="margin:10">
+	<table width="100%" cellspacing="0" cellpadding="0">
+        <tr>
+        <th>AP-SVM vs SVM</th>
+        <th>HOB-SVM vs SVM</th>
+        <th>HOB-SVM vs AP-SVM</th>
+        <th>HOAP-SVM vs SVM</th>
+        <th>HOAP-SVM vs AP-SVM</th>
+        </tr>
+        
+        <tr>
+        <td width="20%" valign="top" align="center"><img src="./dependencies/images/results/apsvm_svm_trainval.png" width="100%" align=center ></td>
+        <td width="20%" valign="top" align="center"><img src="./dependencies/images/results/hobsvm_svm_trainval.png" width="100%" align=center ></td>
+        <td width="20%" valign="top" align="center"><img src="./dependencies/images/results/hobsvm_apsvm_trainval.png" width="100%" align=center ></td>
+        <td width="20%" valign="top" align="center"><img src="./dependencies/images/results/m4svm_svm_trainval.png" width="100%" align=center ></td>
+        <td width="20%" valign="top" align="center"><img src="./dependencies/images/results/m4svm_apsvm_trainval.png" width="100%" align=center ></td>
+        </tr>
+        
+	</table>
+	</p>
+	
+<p>
+Figures below show the difference of average precision for the <b>VOC test</b> data evaluated using the VOC Evaluation server. Note that <em>AP-SVM vs SVM</em> means average precision of AP-SVM minus the average precision of SVM. Similarly for others.
+</p>
+			
+	<p style="margin:10">
+	<table width="100%" cellspacing="0" cellpadding="0">
+        <tr>
+        <th>AP-SVM vs SVM</th>
+        <th>HOB-SVM vs SVM</th>
+        <th>HOB-SVM vs AP-SVM</th>
+        <th>HOAP-SVM vs SVM</th>
+        <th>HOAP-SVM vs AP-SVM</th>
+        </tr>
+        
+        <tr>
+        <td width="20%" valign="top" align="center"><img src="./dependencies/images/results/apsvm_svm_test.png" width="100%" align=center ></td>
+        <td width="20%" valign="top" align="center"><img src="./dependencies/images/results/hobsvm_svm_test.png" width="100%" align=center ></td>
+        <td width="20%" valign="top" align="center"><img src="./dependencies/images/results/hobsvm_apsvm_test.png" width="100%" align=center ></td>
+        <td width="20%" valign="top" align="center"><img src="./dependencies/images/results/hoap_svm_test.png" width="100%" align=center ></td>
+        <td width="20%" valign="top" align="center"><img src="./dependencies/images/results/hoap_apsvm_test.png" width="100%" align=center ></td>
+        </tr>
+        
+	</table>
+	</p>
+
+<p>
+Tables below are to show the numeric values of the average precision for all the four methods.
+</p>	
+	
+	<p style="margin:10">
+	<table width="100%" cellspacing="0" cellpadding="0">       
+        
+        <tr>
+        <td width="20%" valign="top" align="center"><img src="./dependencies/images/results/result_tables.png" width="60%" align=center ></td>        
+        </tr>
+        
+	</table>
+	</p>
+	
+<p>
+Figure below shows the top 8 samples ranked by all the four methods for the <b>reading</b> action class. First row: SVM, Second row: AP-SVM, Third row: HOB-SVM, and Fourth row: HOAP-SVM. Note that, the first false positive is ranked 2nd in case of svm (first row) and 3rd in case of AP-SVM (second row), this shows the importance of optimizing the ap loss. On the other hand, in case of HOB-SVM (third row), the first false positive is ranked 4th and the similar samples (2nd and 3rd) are assigned similar scores, this illustrates the importance of using high-order information. Furthermore, hoap-svm (fourth row) has the best ap among all the four methods, this shows the importance of using high-order information and optimizing the correct loss. Note that, in case of hoap-svm, the 4th and 5th ranked samples are false positives (underlying action is close to reading) and they both belong to the same image (our similarity criterion). This indicates that high-order information sometimes may lead to poor test ap in case of confusing classes (such as playinginstrument vs usingcomputer vs reading) by assigning all the connected samples to the wrong label. Same effect can be seen in HOB-SVM for 7th and 8th ranked samples.
+</p>	
+	
+	<p style="margin:10">
+	<table width="100%" cellspacing="0" cellpadding="0">       
+        
+        <tr>
+        <td width="50%" valign="top" align="center"><img src="./dependencies/images/top_ranked_reading.png" width="60%" align=center ></td>        
+        </tr>
+        
+	</table>
+	</p>
+	
+	
+<h3>More Results</h3>
+<p>
+In order to better visualize the effect of high-order information while learning to rank, we show the ranked samples in order by all the four methods on all the 5 test folds for all the 10 action classes. The advantages and disadvantages of incorporating high-order information can be seen in the provided ranked samples. We also provide the ranked samples by all the four methods on the VOC test dataset.
+</p>    
+    <p style="margin:10">
+	<table width="80%" cellspacing="0" cellpadding="0">
+	    
+        <tr>
+        <th>Jumping</th>
+        <th><a href="./dependencies/htmlpages/jumping_test_fold1.html">Fold 1</a></th>
+        <th><a href="./dependencies/htmlpages/jumping_test_fold2.html">Fold 2</a></th>
+        <th><a href="./dependencies/htmlpages/jumping_test_fold3.html">Fold 3</a></th>
+        <th><a href="./dependencies/htmlpages/jumping_test_fold4.html">Fold 4</a></th>
+        <th><a href="./dependencies/htmlpages/jumping_test_fold5.html">Fold 5</a></th>
+        <th><a href="./dependencies/htmlpages/jumping_VOCtest.html">VOCtest</a></th>
+        </tr>        
+        
+        <tr>
+        <th>Phoning</th>
+        <th><a href="./dependencies/htmlpages/phoning_test_fold1.html">Fold 1</a></th>
+        <th><a href="./dependencies/htmlpages/phoning_test_fold2.html">Fold 2</a></th>
+        <th><a href="./dependencies/htmlpages/phoning_test_fold3.html">Fold 3</a></th>
+        <th><a href="./dependencies/htmlpages/phoning_test_fold4.html">Fold 4</a></th>
+        <th><a href="./dependencies/htmlpages/phoning_test_fold5.html">Fold 5</a></th>
+        <th><a href="./dependencies/htmlpages/phoning_VOCtest.html">VOCtest</a></th>
+        </tr>    
+        
+        <tr>
+        <th>Playing Instrument</th>
+        <th><a href="./dependencies/htmlpages/playinginstrument_test_fold1.html">Fold 1</a></th>
+        <th><a href="./dependencies/htmlpages/playinginstrument_test_fold2.html">Fold 2</a></th>
+        <th><a href="./dependencies/htmlpages/playinginstrument_test_fold3.html">Fold 3</a></th>
+        <th><a href="./dependencies/htmlpages/playinginstrument_test_fold4.html">Fold 4</a></th>
+        <th><a href="./dependencies/htmlpages/playinginstrument_test_fold5.html">Fold 5</a></th>
+        <th><a href="./dependencies/htmlpages/playinginstrument_VOCtest.html">VOCtest</a></th>
+        </tr>    
+        
+        <tr>
+        <th>Reading</th>
+        <th><a href="./dependencies/htmlpages/reading_test_fold1.html">Fold 1</a></th>
+        <th><a href="./dependencies/htmlpages/reading_test_fold2.html">Fold 2</a></th>
+        <th><a href="./dependencies/htmlpages/reading_test_fold3.html">Fold 3</a></th>
+        <th><a href="./dependencies/htmlpages/reading_test_fold4.html">Fold 4</a></th>
+        <th><a href="./dependencies/htmlpages/reading_test_fold5.html">Fold 5</a></th>
+        <th><a href="./dependencies/htmlpages/reading_VOCtest.html">VOCtest</a></th>
+        </tr>    
+        
+        <tr>
+        <th>Riding Bike</th>
+        <th><a href="./dependencies/htmlpages/ridingbike_test_fold1.html">Fold 1</a></th>
+        <th><a href="./dependencies/htmlpages/ridingbike_test_fold2.html">Fold 2</a></th>
+        <th><a href="./dependencies/htmlpages/ridingbike_test_fold3.html">Fold 3</a></th>
+        <th><a href="./dependencies/htmlpages/ridingbike_test_fold4.html">Fold 4</a></th>
+        <th><a href="./dependencies/htmlpages/ridingbike_test_fold5.html">Fold 5</a></th>
+        <th><a href="./dependencies/htmlpages/ridingbike_VOCtest.html">VOCtest</a></th>
+        </tr>    
+        
+        <tr>
+        <th>Running</th>
+        <th><a href="./dependencies/htmlpages/running_test_fold1.html">Fold 1</a></th>
+        <th><a href="./dependencies/htmlpages/running_test_fold2.html">Fold 2</a></th>
+        <th><a href="./dependencies/htmlpages/running_test_fold3.html">Fold 3</a></th>
+        <th><a href="./dependencies/htmlpages/running_test_fold4.html">Fold 4</a></th>
+        <th><a href="./dependencies/htmlpages/running_test_fold5.html">Fold 5</a></th>
+        <th><a href="./dependencies/htmlpages/running_VOCtest.html">VOCtest</a></th>
+        </tr>        
+        
+        <tr>
+        <th>Taking Photo</th>
+        <th><a href="./dependencies/htmlpages/takingphoto_test_fold1.html">Fold 1</a></th>
+        <th><a href="./dependencies/htmlpages/takingphoto_test_fold2.html">Fold 2</a></th>
+        <th><a href="./dependencies/htmlpages/takingphoto_test_fold3.html">Fold 3</a></th>
+        <th><a href="./dependencies/htmlpages/takingphoto_test_fold4.html">Fold 4</a></th>
+        <th><a href="./dependencies/htmlpages/takingphoto_test_fold5.html">Fold 5</a></th>
+        <th><a href="./dependencies/htmlpages/takingphoto_VOCtest.html">VOCtest</a></th>
+        </tr>  
+        
+        <tr>
+        <th>Using Computer</th>
+        <th><a href="./dependencies/htmlpages/usingcomputer_test_fold1.html">Fold 1</a></th>
+        <th><a href="./dependencies/htmlpages/usingcomputer_test_fold2.html">Fold 2</a></th>
+        <th><a href="./dependencies/htmlpages/usingcomputer_test_fold3.html">Fold 3</a></th>
+        <th><a href="./dependencies/htmlpages/usingcomputer_test_fold4.html">Fold 4</a></th>
+        <th><a href="./dependencies/htmlpages/usingcomputer_test_fold5.html">Fold 5</a></th>
+        <th><a href="./dependencies/htmlpages/usingcomputer_VOCtest.html">VOCtest</a></th>
+        </tr>  
+        
+        <tr>
+        <th>Walking</th>
+        <th><a href="./dependencies/htmlpages/walking_test_fold1.html">Fold 1</a></th>
+        <th><a href="./dependencies/htmlpages/walking_test_fold2.html">Fold 2</a></th>
+        <th><a href="./dependencies/htmlpages/walking_test_fold3.html">Fold 3</a></th>
+        <th><a href="./dependencies/htmlpages/walking_test_fold4.html">Fold 4</a></th>
+        <th><a href="./dependencies/htmlpages/walking_test_fold5.html">Fold 5</a></th>
+        <th><a href="./dependencies/htmlpages/walking_VOCtest.html">VOCtest</a></th>
+        </tr>  
+        
+        <tr>
+        <th>Riding Horse</th>
+        <th><a href="./dependencies/htmlpages/ridinghorse_test_fold1.html">Fold 1</a></th>
+        <th><a href="./dependencies/htmlpages/ridinghorse_test_fold2.html">Fold 2</a></th>
+        <th><a href="./dependencies/htmlpages/ridinghorse_test_fold3.html">Fold 3</a></th>
+        <th><a href="./dependencies/htmlpages/ridinghorse_test_fold4.html">Fold 4</a></th>
+        <th><a href="./dependencies/htmlpages/ridinghorse_test_fold5.html">Fold 5</a></th>
+        <th><a href="./dependencies/htmlpages/ridinghorse_VOCtest.html">VOCtest</a></th>
+        </tr>  
+        
+	</table>
+	</p>
+
+
+
+<!---
+<table>
+<tr>
+	<td valign="top";><img style="width: 300px;" src="images/SR_config_12.png" /></td>
+	<td valign="top";><img style="width: 300px;" src="images/SR_config_9.png" /></td>
+	<td valign="top";><img style="width: 300px;" src="images/SR_config_5.png" /></td>
+</tr>
+<tr>
+	<td valign="top"; align="center"> <b>768-D</b> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+	<td valign="top"; align="center"> <b>576-D</b> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+	<td valign="top"; align="center"> <b>320-D</b> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+</tr>
+</table>
+--->
+
+<br><br>
+<h3>Resources</h3>
+<p>
+The source code and the data will be available soon. For a precleaned version please email: <em><u>puneet dot kumar at inria dot fr</u></em>; <em><u>pueetkdokania at gmail dot com </u></em>.
+</p>
+
+<h3>Relevant Publications</h3>
+<p>
+
+<div class='ref'>
+  <div class='authors'>
+   P. K. Dokania,
+   A. Behl,
+   C. V. Jawahar,
+   M. P. Kumar
+  </div>
+  
+  <div class='title'>
+   <a href="">
+    Learning to Rank using High-Order Information
+   </a> &nbsp; 
+  </div>
+  
+  <div class='conf'>
+   ECCV,  2014
+  </div>
+  
+  <div class='links'>
+     <a onclick='if (document.getElementById("Dokania_Ranking_ECCV14").style.display=="none") document.getElementById("Dokania_Ranking_ECCV14").style.display="block"; else document.getElementById("Dokania_Ranking_ECCV14").style.display="none";'> <u> Bibtex </u> </a> |  <a onclick='if (document.getElementById("ABSDokania14").style.display=="none") document.getElementById("ABSDokania14").style.display="block"; else document.getElementById("ABSDokania14").style.display="none";'> <u> Abstract </u> </a> |  <a href="./dependencies/pdfs/DBJK_Ranking_ECCV14.pdf"> PDF </a>  
+     </div>
+     
+  <div style="display: none;" class='BibtexExpand' id='Dokania_Ranking_ECCV14'>  
+   <pre class='bibtex'>   
+ @Article{Dokania_Ranking_ECCV14,
+  author       = "Dokania, P. K. and Behl, A. and Jawahar, C. V. and Kumar, P. K.",
+  title        = "Learning to Rank using High-Order Information",
+  journal      = "ECCV",
+  year         = "2014",
+ }
+ </pre>
+  </div>
+  
+  <div style="display: none;" class='AbstractExpand' id='ABSDokania14'><br>
+  <p>
+   The problem of ranking a set of visual samples according to
+their relevance to a query plays an important role in computer vision.
+The traditional approach for ranking is to train a binary classifier such as
+a support vector machine (svm). Binary classifiers suffer from two main
+deficiencies: (i) they do not optimize a ranking-based loss function, for
+example, the average precision (ap) loss; and (ii) they cannot incorporate
+high-order information such as the a priori correlation between the rele-
+vance of two visual samples (for example, two persons in the same image
+tend to perform the same action). We propose two novel learning formu-
+lations that allow us to incorporate high-order information for ranking.
+The first framework, called high-order binary svm (hob-svm), allows for
+a structured input. The parameters of hob-svm are learned by minimiz-
+ing a convex upper bound on a surrogate 0-1 loss function. In order to
+obtain the ranking of the samples that form the structured input, hob-
+svm sorts the samples according to their max-marginals. The second
+framework, called high-order average precision svm (hoap-svm), also
+allows for a structured input and uses the same ranking criterion. How-
+ever, in contrast to hob-svm, the parameters of hoap-svm are learned by
+minimizing a difference-of-convex upper bound on the ap loss. Using a
+standard, publicly available dataset for the challenging problem of action
+classification, we show that both hob-svm and hoap-svm outperform the
+baselines that ignore high-order information.
+</p>
+  </div>
+  
+</div>
+
+<br />
+</p>
+
+<h3>References</h3>
+<p>
+[1] Vapnik, V.: Statistical learning theory. Wiley (1998) <br>
+[2] Tsochantaridis, I., Hofmann, T., Joachims, T., Altun, Y.: Support vector machine learning for interdependent and structured output spaces. In: ICML (2004) <br>
+[3] Yue, Y., Finley, T., Radlinski, F., Joachims, T.: A support vector method for optimizing average precision. In: SIGIR (2007) <br>
+[4] Yuille, A., Rangarajan, A.: The concave-convex procedure. Neural Computation (2003)  <br>
+[5] Kohli, P., Torr, P.: Dynamic graph cuts for efficient inference in Markov random fields. In: PAMI (2007)  <br>
+</p>
+
+<h3>Acknowledgements</h3>
+<p>Pawan Kumar is partially funded by the European Research Council under the European Community's Seventh Framework Programme (FP7/2007-2013)/ERC
+Grant agreement number 259112, and Puneet Dokania is funded by the Ministere de l'education nationale, de l'enseignement superieure et de la recherche.
+</p>
+
+<!---
+<img style="height: 60px;" alt="msrc-logo" src="images/msr-logo.gif" />
+<img style="height: 60px;" hspace = "20" alt="erc-logo" src="images/erc-logo.gif" />
+--->
+
+</div>
+
+
+</body>
+</html>
+
+
+
+
+
+
+
