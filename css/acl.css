@@ -196,6 +196,7 @@ body{
 }
 
 #maincontent #onecol #pubTitle {
+    color: blue;
 	font-style: oblique;
 }
 #maincontent #onecol #pubAuthor {
